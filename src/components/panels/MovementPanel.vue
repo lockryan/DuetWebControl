@@ -85,7 +85,7 @@
           <v-flex>
             <code-btn
               color="primary"
-              code="`G10 P1 L20 X0 Y0 Z0\nG54\nM500`"
+              code="`G10  L20 X0 Y0 Z0\nM500`"
               :title="$t('button.work.titleAll')"
               block
             >{{ $t('button.work.captionAll') }}</code-btn>
@@ -111,14 +111,14 @@
                 :color="axis.homed ? 'primary' : 'warning'"
                 :disabled="uiFrozen"
                 :title="$t('button.work.title', [axis.letter])"
-                :code="`G10 P1 L20 ${axis.letter}0\nG54\nM500`"
+                :code="`G10  L20 ${axis.letter}0\nM500`"
                 block
               >{{ $t('button.work.caption', [axis.letter]) }}</code-btn>
             </v-flex>
           </v-layout>
         </v-layout>
       </v-layout>
-      
+
 
 
       <v-layout row>
@@ -233,7 +233,7 @@
                       </v-flex>
                     </v-layout>
                   </v-flex>
-                  
+
                 </v-layout>
               </v-flex>
 
@@ -270,7 +270,7 @@
           <code-btn
             block
             color="primary"
-            :code="`G53 G0 Z94\nG54\nG1 X0 Y0 F1500\nG1 Z0 F1500`"
+            :code="`G53 G0 Z94\nG1 X0 Y0 F1500\nG1 Z0 F1500`"
             :title="$t('button.workGoto.titleAll')"
           >{{ $t('button.workGoto.captionAll') }}</code-btn>
         </v-flex>
@@ -281,7 +281,7 @@
 
         <v-flex shrink class="hidden-sm-and-down px-1"></v-flex>
 
-        
+
 
         <!-- Regular Set Work buttons -->
         <v-flex shrink class="hidden-sm-and-down">
@@ -290,7 +290,7 @@
               <code-btn
                 block
                 color="primary"
-                :code="`G10 P1 L20 X0 Y0 Z0\nG54\nM500`"
+                :code="`G10 L20 X0 Y0 Z0\nM500`"
                 :title="$t('button.work.titleAll')"
                 class="mr-0 hidden-sm-and-down"
               >{{ $t('button.work.captionAll') }}</code-btn>
@@ -301,7 +301,7 @@
                 :color="axis.homed ? 'primary' : 'warning'"
                 :disabled="uiFrozen"
                 :title="$t('button.work.title', [axis.letter])"
-                :code="`G10 P1 L20 ${axis.letter}0\nG54\nM500`"
+                :code="`G10  L20 ${axis.letter}0\nM500`"
                 class="mr-0"
               >{{ $t('button.work.caption', [axis.letter]) }}</code-btn>
             </v-flex>
@@ -315,7 +315,7 @@
           <code-btn
             block
             color="primary"
-            :code="`G53 G0 Z94\nG54\nG1 X0 Y0 F1500\nG1 Z0 F1500`"
+            :code="`G53 G0 Z94\nG1 X0 Y0 F1500\nG1 Z0 F1500`"
             :title="$t('button.workGoto.titleAll')"
             class="hidden-sm-and-down"
           >{{ $t('button.workGoto.captionAll') }}</code-btn>
