@@ -38,6 +38,13 @@ export const Routing = [
 				caption: 'menu.control.heightmap',
 				path: '/Heightmap',
 				component: Control.Heightmap
+			},
+			// Preview 3D
+			{
+				icon: 'grid_on',
+				caption: 'menu.control.preview3D',
+				path: '/Preview3D',
+				component: Control.Preview3D
 			}
 		]
 	},

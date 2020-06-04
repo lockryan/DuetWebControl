@@ -396,7 +396,8 @@ export default {
 			caption: 'Machine Control',
 			dashboard: 'Dashboard',
 			console: 'Console',
-			heightmap: 'Height Map'
+			heightmap: 'Height Map',
+			preview3D: "3D Preview"
 		},
 		job: {
 			caption: 'Current Job',
@@ -520,6 +521,24 @@ export default {
 			noFans: 'No Fans'
 		},
 		heightmap: {
+			scale: 'Scale:',
+			orMore: 'or more',
+			orLess: 'or less',
+			axes: 'Axes:',
+			notAvailable: 'height map not available',
+			numPoints: 'Number of points: {0}',
+			radius: 'Probing radius: {0}',
+			area: 'Probe area: {0}',
+			maxDeviations: 'Maximum deviations: {0} / {1}',
+			meanError: 'Mean error: {0}',
+			rmsError: 'RMS error: {0}',
+			topView: 'Top view',
+			colorScheme: 'Color scheme:',
+			terrain: 'Terrain',
+			heat: 'Heat',
+			reload: 'Reload Height Map'
+		},
+		preview3D: {
 			scale: 'Scale:',
 			orMore: 'or more',
 			orLess: 'or less',

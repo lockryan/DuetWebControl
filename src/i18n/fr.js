@@ -396,7 +396,8 @@ export default {
 			caption: 'Contrôle de la Machine',
 			dashboard: 'Tableau de Bord',
 			console: 'Console',
-			heightmap: 'Carte de Hauteur'
+			heightmap: 'Carte de Hauteur',
+			preview3D: 'Vue 3D'
 		},
 		job: {
 			caption: 'Travail Actuel',
@@ -520,6 +521,24 @@ export default {
 			noFans: 'Aucun Ventilateur'
 		},
 		heightmap: {
+			scale: 'Échelle:',
+			orMore: 'ou plus',
+			orLess: 'ou moins',
+			axes: 'Axes:',
+			notAvailable: 'Carte de Hauteur non disponible',
+			numPoints: 'Nombre de points: {0}',
+			radius: 'Rayon de palpage: {0}',
+			area: 'Zone de palpage: {0}',
+			maxDeviations: 'Maximum déviations: {0} / {1}',
+			meanError: 'Erreur moyenne: {0}',
+			rmsError: 'Erreur RMS: {0}',
+			topView: 'Vue du dessus',
+			colorScheme: 'Schéma couleur:',
+			terrain: 'Terrain',
+			heat: 'Chaleur',
+			reload: 'Recharger Carte de Hauteur'
+		},
+		preview3D: {
 			scale: 'Échelle:',
 			orMore: 'ou plus',
 			orLess: 'ou moins',
