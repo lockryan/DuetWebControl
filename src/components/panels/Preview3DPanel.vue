@@ -26,78 +26,21 @@ canvas {
 		<v-card class="card">
 			<v-container ref="container" class="pa-1" fluid>
 				<v-layout row wrap fill-height>
-					<!-- TODO: Add CSV list here -->
-
 					<v-flex class="preview3D-container pa-2" xs12 sm12 md9 lg10 xl10>
 						<v-layout ref="parentElement" row fill-height>
-							<v-flex class="loading" v-show="!ready">
-								<v-layout fill-height align-center>
-									<v-flex tag="h1" class="text-xs-center">
-										{{ loading ? $t('generic.loading') : (errorMessage ? errorMessage : $t('panel.preview3D.notAvailable')) }}
-									</v-flex>
-								</v-layout>
-							</v-flex>
-							<v-flex v-show="ready" shrink>
+                            <v-layout align-center>
+                                <v-flex tag="h1" class="text-xs-center">
+                                    {{ loading ? $t('generic.loading') : (errorMessage ? errorMessage : $t('panel.heightmap.notAvailable')) }}
+                                </v-flex>
+                            </v-layout>
+							<v-flex shrink>
 								<canvas ref="canvas" class="canvas" @mousemove="canvasMouseMove"></canvas>
-							</v-flex>
-							<v-flex d-flex shrink>
-								<canvas ref="legend" class="legend" width="80"></canvas>
-							</v-flex>
-						</v-layout>
-					</v-flex>
-
-					<v-flex class="pa-2" xs12 sm12 md3 lg2 xl2>
-						<v-layout column fill-height justifiy-space-between>
-							<v-flex class="pt-2">
-								{{ $t('panel.preview3D.numPoints', [$display(numPoints, 0)]) }}
-							</v-flex>
-							<v-flex>
-								{{ $t('panel.preview3D.radius', [$display(radius, 0, 'mm')]) }}
-							</v-flex>
-							<v-flex>
-								{{ $t('panel.preview3D.area', [$display(area / 100, 1, 'cm²')]) }}
-							</v-flex>
-							<v-flex>
-								{{ $t('panel.preview3D.maxDeviations', [$display(minDiff, 3), $display(maxDiff, 3, 'mm')]) }}
-							</v-flex>
-							<v-flex>
-								{{ $t('panel.preview3D.meanError', [$display(meanError, 3, 'mm')]) }}
-							</v-flex>
-							<v-flex>
-								{{ $t('panel.preview3D.rmsError', [$display(rmsError, 3, 'mm')]) }}
-							</v-flex>
-							<v-flex shrink>
-								{{ $t('panel.preview3D.colorScheme') }}
-							</v-flex>
-							<v-flex>
-								<v-btn-toggle v-model="colorScheme">
-									<v-btn value="terrain">{{ $t('panel.preview3D.terrain') }}</v-btn>
-									<v-btn value="heat">{{ $t('panel.preview3D.heat') }}</v-btn>
-								</v-btn-toggle>
-							</v-flex>
-							<v-flex>
-								<v-btn class="ml-0" :disabled="!ready" @click="topView">
-									<v-icon small class="mr-1">vertical_align_bottom</v-icon> {{ $t('panel.preview3D.topView') }}
-								</v-btn>
-							</v-flex>
-							<v-flex shrink>
-								<v-btn class="ml-0" :disabled="!isConnected" :loading="loading" @click="getPreview3D()">
-									<v-icon class="mr-1">refresh</v-icon> {{ $t('panel.preview3D.reload') }}
-								</v-btn>
 							</v-flex>
 						</v-layout>
 					</v-flex>
 				</v-layout>
 			</v-container>
 		</v-card>
-
-		<v-tooltip top absolute v-model="tooltip.shown" :position-x="tooltip.x" :position-y="tooltip.y">
-			<span class="no-cursor">
-				X: {{ $display(tooltip.coord.x, 1, 'mm') }}<br/>
-				Y: {{ $display(tooltip.coord.y, 1, 'mm') }}<br/>
-				Z: {{ $display(tooltip.coord.z, 3, 'mm') }}
-			</span>
-		</v-tooltip>
 	</div>
 </template>
 
@@ -106,12 +49,65 @@ canvas {
 
 import { mapState, mapGetters, mapActions } from 'vuex'
 
-import { Scene, PerspectiveCamera, WebGLRenderer, Raycaster, Mesh, MeshBasicMaterial, Vector2, Vector3, VertexColors, DoubleSide, ArrowHelper, GridHelper } from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, Raycaster, Mesh, MeshBasicMaterial, Vector2, Vector3, VertexColors, DoubleSide, ArrowHelper, GridHelper, Color, Object3D, Geometry, Line, LineBasicMaterial } from 'three'
 import OrbitControls from 'three-orbitcontrols'
 
 import { drawLegend, setFaceColors, generateIndicators, generateMeshGeometry } from '../../utils/3d.js'
-import CSV from '../../utils/csv.js'
 import Path from '../../utils/path.js'
+
+
+import colornames from 'colornames';
+import Toolpath from 'gcode-toolpath';
+//import * as THREE from 'three';
+// import log from 'app/lib/log';
+
+const defaultColor = new Color(colornames('lightgrey'));
+const motionColor = {
+    'G0': new Color(colornames('green')),
+    'G1': new Color(colornames('blue')),
+    'G2': new Color(colornames('deepskyblue')),
+    'G3': new Color(colornames('deepskyblue'))
+};
+
+// class GCodeVisualizer {
+//     constructor() {
+
+//         return this;
+//     }
+
+
+//     setFrameIndex(frameIndex) {
+//         if (this.frames.length === 0) {
+//             return;
+//         }
+
+//         frameIndex = Math.min(frameIndex, this.frames.length - 1);
+//         frameIndex = Math.max(frameIndex, 0);
+
+//         const v1 = this.frames[this.frameIndex].vertexIndex;
+//         const v2 = this.frames[frameIndex].vertexIndex;
+
+//         // Completed path is grayed out
+//         if (v1 < v2) {
+//             const workpiece = this.group.children[0];
+//             for (let i = v1; i < v2; ++i) {
+//                 workpiece.geometry.colors[i] = defaultColor;
+//             }
+//             workpiece.geometry.colorsNeedUpdate = true;
+//         }
+
+//         // Restore the path to its original colors
+//         if (v2 < v1) {
+//             const workpiece = this.group.children[0];
+//             for (let i = v2; i < v1; ++i) {
+//                 workpiece.geometry.colors[i] = this.geometry.colors[i];
+//             }
+//             workpiece.geometry.colorsNeedUpdate = true;
+//         }
+
+//         this.frameIndex = frameIndex;
+//     }
+// }
 
 const scaleZ = 0.5, maxVisualizationZ = 0.25
 const indicatorColor = 0xFFFFFF, indicatorOpacity = 0.4, indicatorOpacityHighlighted = 1.0
@@ -123,6 +119,7 @@ window.addEventListener('resize', function() {
 
 export default {
 	beforeCreate() {
+        console.log("beforeCreate");
 		this.three = {						// non-reactive data
 			scene: null,
 			camera: null,
@@ -136,6 +133,20 @@ export default {
 			meshIndicators: null,
 			lastIntersection: null
 		}
+
+        this.group = new Object3D();
+        this.geometry = new Geometry();
+
+
+        // Example
+        // [
+        //   {
+        //     code: 'G1 X1',
+        //     vertexIndex: 2
+        //   }
+        // ]
+        this.frames = []; // Example
+        this.frameIndex = 0;
 	},
 	computed: {
 		...mapGetters(['isConnected']),
@@ -146,7 +157,7 @@ export default {
 			isActive: true,
 			ready: false,
 			loading: false,
-			errorMessage: null,
+			errorMessage: "InitialData",
 
 			colorScheme: 'terrain',
 			tooltip: {
@@ -159,14 +170,6 @@ export default {
 				y: undefined,
 				shown: false
 			},
-			numPoints: undefined,			// points excluding NaN
-			area: undefined,
-			radius: undefined,
-			minDiff: undefined,
-			maxDiff: undefined,
-			meanError: undefined,
-			rmsError: undefined,
-
 			unsubscribe: undefined
 		}
 	},
@@ -174,37 +177,43 @@ export default {
 		...mapActions('machine', ['download']),
 		init() {
 			// Perform initial resize
+            console.log("INIT");
 			const size = this.resize();
 
 			// Create THREE instances
 			this.three.scene = new Scene();
 			this.three.camera = new PerspectiveCamera(45, size.width / size.height, 0.1, 1000);
-			this.three.camera.position.set(1, 1, 1);
-			this.three.camera.up = new Vector3(0, 0, 1);
+			this.three.camera.position.set(0, 0, 10);
+			this.three.camera.up = new Vector3(0, 1, 0);
 			this.three.renderer = new WebGLRenderer({ canvas: this.$refs.canvas });
 			this.three.renderer.setSize(size.width, size.height);
 			this.three.orbitControls = new OrbitControls(this.three.camera, this.three.renderer.domElement);
 			this.three.orbitControls.enableKeys = false;
 			this.three.raycaster = new Raycaster();
-
+    
 			// Register this instance in order to deal with size changes
 			threeInstances.push(this);
-			if (this.isConnected) {
-				this.getPreview3D();
-			}
+//			if (this.isConnected) {
+				this.preview();
+//			}
+            console.log("inited");
 		},
 		resize() {
+            console.log("resize");
 			if (!this.isActive) {
 				return;
 			}
 
 			// Resize canvas elements
-			const containerOffset = this.$refs.container.scrollWidth - this.$refs.container.offsetWidth;
-			const width = this.$refs.parentElement.offsetWidth - this.$refs.legend.offsetWidth - containerOffset;
-			const height = this.$refs.parentElement.offsetHeight;
-			this.$refs.legend.height = height;
-			this.$refs.canvas.width = width;
-			this.$refs.canvas.height = height;
+			// const containerOffset = this.$refs.container.scrollWidth - this.$refs.container.offsetWidth;
+			// const width = this.$refs.parentElement.offsetWidth - this.$refs.legend.offsetWidth - containerOffset;
+			// const height = this.$refs.parentElement.offsetHeight;
+			// this.$refs.legend.height = height;
+			// this.$refs.canvas.width = width;
+			// this.$refs.canvas.height = height;
+
+            const width = 640;
+            const height = 480;
 
 			// Resize the 3D height map
 			if (this.three.renderer) {
@@ -214,121 +223,168 @@ export default {
 			}
 
 			// Redraw the legend and return the canvas size
-			drawLegend(this.$refs.legend, maxVisualizationZ, this.colorScheme);
+			//drawLegend(this.$refs.legend, maxVisualizationZ, this.colorScheme);
 			return { width, height };
 		},
-		showCSV(csvData) {
-			// Load the CSV. The first line is a comment that can be removed
-			const csv = new CSV(csvData.substr(csvData.indexOf("\n") + 1));
-			let radius = parseFloat(csv.get('radius'));
-			if (radius <= 0) { radius = undefined; }
-			const xMin = parseFloat(csv.get('xmin'));
-			const yMin = parseFloat(csv.get('ymin'));
-			let xSpacing = parseFloat(csv.get('xspacing'));
-			if (isNaN(xSpacing)) { xSpacing = parseFloat(csv.get('spacing')); }
-			let ySpacing = parseFloat(csv.get('yspacing'));
-			if (isNaN(ySpacing)) { ySpacing = parseFloat(csv.get('spacing')); }
+        renderGCode(gcode) {
+            console.log("renderGCode");
+            const toolpath = new Toolpath({
+                // @param {object} modal The modal object.
+                // @param {object} v1 A 3D vector of the start point.
+                // @param {object} v2 A 3D vector of the end point.
+                addLine: (modal, v1, v2) => {
+                    const { motion } = modal;
+                    const color = motionColor[motion] || defaultColor;
+                    this.geometry.vertices.push(new Vector3(v2.x, v2.y, v2.z));
+                    this.geometry.colors.push(color);
+                },
+                // @param {object} modal The modal object.
+                // @param {object} v1 A 3D vector of the start point.
+                // @param {object} v2 A 3D vector of the end point.
+                // @param {object} v0 A 3D vector of the fixed point.
+                addArcCurve: (modal, v1, v2, v0) => {
+                    const { motion, plane } = modal;
+                    const isClockwise = (motion === 'G2');
+                    const radius = Math.sqrt(
+                        ((v1.x - v0.x) ** 2) + ((v1.y - v0.y) ** 2)
+                    );
+                    let startAngle = Math.atan2(v1.y - v0.y, v1.x - v0.x);
+                    let endAngle = Math.atan2(v2.y - v0.y, v2.x - v0.x);
 
-			// Convert each point to a vector
-			const points = [];
-			for (let y = 1; y < csv.content.length; y++) {
-				for (let x = 0; x < csv.content[y].length; x++) {
-					const value = csv.content[y][x].trim();
-					points.push([xMin + x * xSpacing, yMin + (y - 1) * ySpacing, (value === "0") ? NaN : parseFloat(value)]);
-				}
-			}
+                    // Draw full circle if startAngle and endAngle are both zero
+                    if (startAngle === endAngle) {
+                        endAngle += (2 * Math.PI);
+                    }
 
-			// Display height map
-			this.showPreview3D(points, radius);
-		},
-		showPreview3D(points, probeRadius) {
-			// Clean up first
-			if (this.three.meshGeometry) {
-				this.three.scene.remove(this.three.meshPlane);
-				this.three.meshIndicators.forEach(function(indicator) {
-					this.remove(indicator);
-				}, this.three.scene);
+                    const arcCurve = new ArcCurve(
+                        v0.x, // aX
+                        v0.y, // aY
+                        radius, // aRadius
+                        startAngle, // aStartAngle
+                        endAngle, // aEndAngle
+                        isClockwise // isClockwise
+                    );
+                    const divisions = 30;
+                    const points = arcCurve.getPoints(divisions);
+                    const color = motionColor[motion] || defaultColor;
 
-				this.three.meshGeometry = null;
-				this.three.meshPlane = null;
-				this.three.meshIndicators = null;
-				this.three.lastIntersection = null;
-			}
+                    for (let i = 0; i < points.length; ++i) {
+                        const point = points[i];
+                        const z = ((v2.z - v1.z) / points.length) * i + v1.z;
 
-			// Generate stats
-			let xMin, xMax, yMin, yMax;
+                        if (plane === 'G17') { // XY-plane
+                            this.geometry.vertices.push(new Vector3(point.x, point.y, z));
+                        } else if (plane === 'G18') { // ZX-plane
+                            this.geometry.vertices.push(new Vector3(point.y, z, point.x));
+                        } else if (plane === 'G19') { // YZ-plane
+                            this.geometry.vertices.push(new Vector3(z, point.x, point.y));
+                        }
+                        this.geometry.colors.push(color);
+                    }
+                }
+            });
 
-			this.radius = probeRadius;
-			this.numPoints = 0;
-			this.minDiff = undefined;
-			this.maxDiff = undefined;
-			this.meanError = 0;
-			this.rmsError = 0;
+            console.log("ToolPathOK");
 
-			for (let i = 0; i < points.length; i++) {
-				const z = points[i][2];
-				if (!isNaN(z)) {
-					const x = points[i][0];
-					const y = points[i][1];
-					if (xMin === undefined || xMin > x) { xMin = x; }
-					if (xMax === undefined || xMax < x) { xMax = x; }
-					if (yMin === undefined || yMin > y) { yMin = y; }
-					if (yMax === undefined || yMax < y) { yMax = y; }
+            while (this.group.children.length > 0) {
+                const child = this.group.children[0];
+                this.group.remove(child);
+                child.geometry.dispose();
+            }
 
-					this.numPoints++;
-					this.meanError += z;
-					this.rmsError += z * z;
-					if (this.minDiff === undefined || this.minDiff > z) { this.minDiff = z; }
-					if (this.maxDiff === undefined || this.maxDiff < z) { this.maxDiff = z; }
-				}
-			}
+            console.log("LoadToolPath");
+            toolpath.loadFromStringSync(gcode, (line, index) => {
+                this.frames.push({
+                    data: line,
+                    vertexIndex: this.geometry.vertices.length // remember current vertex index
+                });
+            });
+            console.log("LoadToolPathOK");
 
-			this.area = probeRadius ? (probeRadius * probeRadius * Math.PI) : Math.abs((xMax - xMin) * (yMax - yMin));
-			this.rmsError = Math.sqrt(((this.rmsError * this.numPoints) - (this.meanError * this.meanError))) / this.numPoints;
-			this.meanError = this.meanError / this.numPoints;
+            const workpiece = new Line(
+                new Geometry(),
+                new LineBasicMaterial({
+                    color: defaultColor,
+                    linewidth: 1,
+                    vertexColors: VertexColors,
+                    opacity: 0.5,
+                    transparent: true
+                })
+            );
+            workpiece.geometry.vertices = this.geometry.vertices.slice();
+            workpiece.geometry.colors = this.geometry.colors.slice();
 
-			// Generate mesh geometry and apply face colors
-			this.three.meshGeometry = generateMeshGeometry(points, xMin, xMax, yMin, yMax, scaleZ);
-			setFaceColors(this.three.meshGeometry, scaleZ, this.colorScheme, maxVisualizationZ);
+            this.group.add(workpiece);
 
-			// Make 3D mesh and add it
-			const material = new MeshBasicMaterial({ vertexColors: VertexColors, side: DoubleSide });
-			this.three.meshPlane = new Mesh(this.three.meshGeometry, material);
-			this.three.scene.add(this.three.meshPlane);
+            console.log({
+                workpiece: workpiece,
+                frames: this.frames,
+                frameIndex: this.frameIndex
+            });
 
-			// Make indicators and add them
-			this.three.meshIndicators = generateIndicators(this.three.meshGeometry, this.numPoints, scaleZ, indicatorColor, indicatorOpacity);
-			this.three.meshIndicators.forEach(function(indicator) {
-				this.add(indicator);
-			}, this.three.scene);
+            console.log("renderGCodeDONE");
 
-			if (!this.three.hasHelpers) {
-				// Make axis arrows for XYZ
-				this.three.scene.add(new ArrowHelper(new Vector3(1, 0, 0), new Vector3(-0.6, -0.6, 0), 0.5, 0xFF0000));
-				this.three.scene.add(new ArrowHelper(new Vector3(0, 1, 0), new Vector3(-0.6, -0.6, 0), 0.5, 0x00FF00));
-				this.three.scene.add(new ArrowHelper(new Vector3(0, 0, 1), new Vector3(-0.6, -0.6, 0), 0.5, 0x0000FF));
+            return this.group;
+        },
+        myRender() {
+            console.log("myRender");
+            console.log("myRender0");
+            // Generate stats
+            let xMin = -5.0;
+            let xMax = 5.0;
+            let yMin = -5.0;
+            let yMax = 5.0;
 
-				// Make grid on XY plane
-				const grid = new GridHelper(1.1, 15);
-				grid.rotation.x = -Math.PI / 2;
-				this.three.scene.add(grid);
+            console.log("myRender01");
+            this.numPoints = 0;
+            this.minDiff = 10;
+            this.maxDiff = 10;
+            this.meanError = 0;
+            this.rmsError = 0;
 
-				// Don't add these helpers again
-				this.three.hasHelpers = true;
-			}
+            console.log("myRender02");
+            // Make indicators and add them
+            console.log("myRender03");
 
-			// Render scene
-			this.ready = true;
-			this.resize();
-			this.render();
-		},
+            if (!this.three.hasHelpers) {
+                console.log("Helpers");
+                // Make axis arrows for XYZ
+                this.three.scene.add(new ArrowHelper(new Vector3(1, 0, 0), new Vector3(-0.6, -0.6, 0), 0.5, 0xFF0000));
+                this.three.scene.add(new ArrowHelper(new Vector3(0, 1, 0), new Vector3(-0.6, -0.6, 0), 0.5, 0x00FF00));
+                this.three.scene.add(new ArrowHelper(new Vector3(0, 0, 1), new Vector3(-0.6, -0.6, 0), 0.5, 0x0000FF));
+
+                console.log("Grid");
+                // Make grid on XY plane
+                const grid = new GridHelper(1.1, 15);
+                grid.rotation.x = -Math.PI / 2;
+                this.three.scene.add(grid);
+                console.log("GridDONE");
+                console.log(grid);
+
+                // Don't add these helpers again
+                this.three.hasHelpers = true;
+                console.log("HelpersDone");
+            }
+
+            console.log("myRender04");
+            let group = this.renderGCode("G1 X0 Y0 Z0\nG1 X10 Y10 Z10\n");
+            this.three.scene.add(group);
+
+            // Render scene
+            // this.ready = true;
+            // this.resize();
+            this.render();
+            console.log("myRenderDONE");
+        },
 		render() {
 			if (this.three.renderer) {
+                // console.log("render");
 				requestAnimationFrame(this.render);
 				this.three.renderer.render(this.three.scene, this.three.camera);
 			}
 		},
 		canvasMouseMove(e) {
+            // console.log("canvasMouseMove");
 			if (!e.clientX || !this.three.meshGeometry) {
 				return;
 			}
@@ -370,70 +426,35 @@ export default {
 			}
 		},
 		topView() {
+            console.log("topView");
 			this.three.camera.position.set(0, 0, 1.5);
 			this.three.camera.rotation.set(0, 0, 0);
 			this.three.camera.updateProjectionMatrix();
 		},
 
-		async getPreview3D(filename = Path.preview3D) {
-			if (this.loading) {
-				// Don't attempt to load more than one file at once...
-				return;
-			}
-
-			this.ready = false;
-			this.loading = true;
-			try {
-				const preview3D = await this.download({ filename, type: 'text', showSuccess: false, showError: false });
-				this.showCSV(preview3D);
-			} catch (e) {
-				console.warn(e);
-				this.errorMessage = e.message;
-			}
+		preview() {
+            console.log("preview");
+			this.ready = true;
 			this.loading = false;
-		},
-
-		testMesh() {
-			const csvData = 'RepRapFirmware height map file v1\nxmin,xmax,ymin,ymax,radius,spacing,xnum,ynum\n-140.00,140.10,-140.00,140.10,150.00,20.00,15,15\n0,0,0,0,0,-0.139,-0.188,-0.139,-0.202,-0.224,0,0,0,0,0\n0,0,0,-0.058,-0.066,-0.109,-0.141,-0.129,-0.186,-0.198,-0.191,-0.176,0,0,0\n0,0,0.013,-0.008,-0.053,-0.071,-0.087,-0.113,-0.162,-0.190,-0.199,-0.267,-0.237,0,0\n0,0.124,0.076,0.025,-0.026,-0.054,-0.078,-0.137,-0.127,-0.165,-0.201,-0.189,-0.227,-0.226,0\n0,0.198,0.120,0.047,0.089,-0.074,-0.097,-0.153,-0.188,-0.477,-0.190,-0.199,-0.237,-0.211,0\n0.312,0.229,0.198,0.098,0.097,0.004,-0.089,-0.516,-0.150,-0.209,-0.197,-0.183,-0.216,-0.296,-0.250\n0.287,0.263,0.292,0.100,0.190,0.015,-0.102,-0.039,-0.125,-0.149,-0.137,-0.198,-0.188,-0.220,-0.192\n0.378,0.289,0.328,0.172,0.133,0.078,-0.086,0.134,-0.100,-0.150,-0.176,-0.234,-0.187,-0.199,-0.221\n0.360,0.291,0.260,0.185,0.111,0.108,0.024,0.073,-0.024,-0.116,-0.187,-0.252,-0.201,-0.215,-0.187\n0.447,0.397,0.336,0.276,0.180,0.164,0.073,-0.050,-0.049,-0.109,-0.151,-0.172,-0.211,-0.175,-0.161\n0,0.337,0.289,0.227,0.179,0.127,0.086,0.034,-0.039,-0.060,-0.113,-0.108,-0.171,-0.153,0\n0,0.478,0.397,0.374,0.270,0.141,0.085,0.074,0.037,-0.048,-0.080,-0.187,-0.126,-0.175,0\n0,0,0.373,0.364,0.265,0.161,0.139,0.212,0.040,0.046,-0.008,-0.149,-0.115,0,0\n0,0,0,0.346,0.295,0.273,0.148,0.136,0.084,0.024,-0.055,-0.078,0,0,0\n0,0,0,0,0,0.240,0.178,0.084,0.090,0.004,0,0,0,0,0';
-			this.showCSV(csvData);
-		},
-		testBedCompensation(numPoints) {
-			let testPoints;
-			switch (numPoints) {
-				case 3:
-					testPoints = [[15.0, 15.0, 0.123], [15.0, 195.0, -0.243], [215.0, 105.0, 0.034]];
-					break;
-				case 4:
-					testPoints = [[15.0, 15.0, 0.015], [15.0, 185.0, -0.193], [175.0, 185.0, 0.156], [175.0, 15.0, 0.105]];
-					break;
-				case 5:
-					testPoints = [[15.0, 15.0, 0.007], [15.0, 185.0, -0.121], [175.0, 185.0, -0.019], [175.0, 15.0, 0.193], [95.0, 100.0, 0.05]];
-					break;
-				default:
-					throw new Error("Bad number of probe points, only one of 3/4/5 is supported");
-			}
-			this.showPreview3D(testPoints);
-		}
+            this.myRender();
+        }
 	},
 	activated() {
+        console.log("activated");
 		this.isActive = true;
 		this.resize();
 	},
 	deactivate() {
+        console.log("deactivated");
 		this.isActive = false;
 	},
 	mounted() {
-		const getPreview3D = this.getPreview3D;
-		this.unsubscribe = this.$store.subscribeAction(function(action) {
-			if (action.type.endsWith('onCodeCompleted') && action.payload.reply.indexOf('Preview3D.csv') !== -1) {
-				getPreview3D();
-			}
-		});
-
-		// FIXME give the grid some time to resize everything...
-		setTimeout(this.init, 100);
+        console.log("mounted");
+        this.init();
+		this.preview();
 	},
 	beforeDestroy() {
+        console.log("beforeDestroy");
 		this.unsubscribe();
 
 		threeInstances = threeInstances.filter(item => item !== this);
@@ -447,16 +468,18 @@ export default {
 			if (this.three.meshGeometry) {
 				setFaceColors(this.three.meshGeometry, scaleZ, to, maxVisualizationZ);
 			}
-			drawLegend(this.$refs.legend, maxVisualizationZ, to);
+			//drawLegend(this.$refs.legend, maxVisualizationZ, to);
 		},
 		isConnected(to) {
 			if (to) {
-				this.getPreview3D();
+                console.log("isConnected");
+				this.preview();
 			}
 		},
 		language() {
-			drawLegend(this.$refs.legend, maxVisualizationZ, this.colorScheme);
+			//drawLegend(this.$refs.legend, maxVisualizationZ, this.colorScheme);
 		}
 	}
 }
+
 </script>
