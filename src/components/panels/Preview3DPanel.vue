@@ -49,7 +49,7 @@ canvas {
 
 import { mapState, mapGetters, mapActions } from 'vuex'
 
-import { Scene, PerspectiveCamera, WebGLRenderer, Raycaster, Mesh, MeshBasicMaterial, Vector2, Vector3, VertexColors, DoubleSide, ArrowHelper, GridHelper, Color, Object3D, Geometry, Line, LineBasicMaterial } from 'three'
+import * as THREE from 'three'
 import OrbitControls from 'three-orbitcontrols'
 
 import { drawLegend, setFaceColors, generateIndicators, generateMeshGeometry } from '../../utils/3d.js'
@@ -61,12 +61,12 @@ import Toolpath from 'gcode-toolpath';
 //import * as THREE from 'three';
 // import log from 'app/lib/log';
 
-const defaultColor = new Color(colornames('lightgrey'));
+const defaultColor = new THREE.Color(colornames('lightgrey'));
 const motionColor = {
-    'G0': new Color(colornames('green')),
-    'G1': new Color(colornames('blue')),
-    'G2': new Color(colornames('deepskyblue')),
-    'G3': new Color(colornames('deepskyblue'))
+    'G0': new THREE.Color(colornames('green')),
+    'G1': new THREE.Color(colornames('blue')),
+    'G2': new THREE.Color(colornames('deepskyblue')),
+    'G3': new THREE.Color(colornames('deepskyblue'))
 };
 
 // class GCodeVisualizer {
@@ -134,8 +134,8 @@ export default {
 			lastIntersection: null
 		}
 
-        this.group = new Object3D();
-        this.geometry = new Geometry();
+        this.group = new THREE.Object3D();
+        this.geometry = new THREE.Geometry();
 
 
         // Example
@@ -181,17 +181,17 @@ export default {
 			const size = this.resize();
 
 			// Create THREE instances
-			this.three.scene = new Scene();
-			this.three.camera = new PerspectiveCamera(45, size.width / size.height, 0.1, 1000);
+			this.three.scene = new THREE.Scene();
+			this.three.camera = new THREE.PerspectiveCamera(45, size.width / size.height, 0.1, 1000);
 			this.three.camera.position.set(0, 0, 10);
-			this.three.camera.up = new Vector3(0, 1, 0);
-			this.three.renderer = new WebGLRenderer({ canvas: this.$refs.canvas });
+			this.three.camera.up = new THREE.Vector3(0, 1, 0);
+			this.three.renderer = new THREE.WebGLRenderer({ canvas: this.$refs.canvas });
 			this.three.renderer.setSize(size.width, size.height);
 			this.three.orbitControls = new OrbitControls(this.three.camera, this.three.renderer.domElement);
 			this.three.orbitControls.enableKeys = false;
-			this.three.raycaster = new Raycaster();
+			this.three.raycaster = new THREE.Raycaster();
     
-            this.three.scene.background = new Color("rgb(200, 200, 200)");
+            this.three.scene.background = new THREE.Color("rgb(200, 200, 200)");
 			// Register this instance in order to deal with size changes
 			threeInstances.push(this);
 //			if (this.isConnected) {
@@ -236,7 +236,7 @@ export default {
                 addLine: (modal, v1, v2) => {
                     const { motion } = modal;
                     const color = motionColor[motion] || defaultColor;
-                    this.geometry.vertices.push(new Vector3(v2.x, v2.y, v2.z));
+                    this.geometry.vertices.push(new THREE.Vector3(v2.x, v2.y, v2.z));
                     this.geometry.colors.push(color);
                 },
                 // @param {object} modal The modal object.
@@ -257,7 +257,7 @@ export default {
                         endAngle += (2 * Math.PI);
                     }
 
-                    const arcCurve = new ArcCurve(
+                    const arcCurve = new THREE.ArcCurve(
                         v0.x, // aX
                         v0.y, // aY
                         radius, // aRadius
@@ -274,11 +274,11 @@ export default {
                         const z = ((v2.z - v1.z) / points.length) * i + v1.z;
 
                         if (plane === 'G17') { // XY-plane
-                            this.geometry.vertices.push(new Vector3(point.x, point.y, z));
+                            this.geometry.vertices.push(new THREE.Vector3(point.x, point.y, z));
                         } else if (plane === 'G18') { // ZX-plane
-                            this.geometry.vertices.push(new Vector3(point.y, z, point.x));
+                            this.geometry.vertices.push(new THREE.Vector3(point.y, z, point.x));
                         } else if (plane === 'G19') { // YZ-plane
-                            this.geometry.vertices.push(new Vector3(z, point.x, point.y));
+                            this.geometry.vertices.push(new THREE.Vector3(z, point.x, point.y));
                         }
                         this.geometry.colors.push(color);
                     }
@@ -302,12 +302,12 @@ export default {
             });
             //console.log("LoadToolPathOK");
 
-            const workpiece = new Line(
-                new Geometry(),
-                new LineBasicMaterial({
+            const workpiece = new THREE.Line(
+                new THREE.Geometry(),
+                new THREE.LineBasicMaterial({
                     color: defaultColor,
                     linewidth: 1,
-                    vertexColors: VertexColors,
+                    vertexColors: THREE.VertexColors,
                     opacity: 0.5,
                     transparent: true
                 })
@@ -350,13 +350,13 @@ export default {
             if (!this.three.hasHelpers) {
                 //console.log("Helpers");
                 // Make axis arrows for XYZ
-                this.three.scene.add(new ArrowHelper(new Vector3(1, 0, 0), new Vector3(0, 0, 0), 0.5, 0xFF0000));
-                this.three.scene.add(new ArrowHelper(new Vector3(0, 1, 0), new Vector3(0, 0, 0), 0.5, 0x00FF00));
-                this.three.scene.add(new ArrowHelper(new Vector3(0, 0, 1), new Vector3(0, 0, 0), 0.5, 0x0000FF));
+                this.three.scene.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 0.5, 0xFF0000));
+                this.three.scene.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 0.5, 0x00FF00));
+                this.three.scene.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), 0.5, 0x0000FF));
 
                 //console.log("Grid");
                 // Make grid on XY plane
-                const grid = new GridHelper(100, 50);
+                const grid = new THREE.GridHelper(100, 50);
                 grid.rotation.x = -Math.PI / 2;
                 this.three.scene.add(grid);
                 //console.log("GridDONE");
@@ -368,7 +368,21 @@ export default {
             }
 
             //console.log("myRender04");
-            let group = this.renderGCode("G1 X0 Y0 Z0\nG1 X1 Y0 Z0\nG1 X0 Y1 Z0\nG1 X1 Y1 Z1\n");
+            const GCODE = [
+                'N1 T2 G17 G20 G90 G94 G54',
+                'N2 G0 Z0.25',
+                'N3 X-0.5 Y0.',
+                'N4 Z0.1',
+                'N5 G01 Z0. F5.',
+                'N6 G02 X0. Y0.5 I0.5 J0. F2.5',
+                'N7 X0.5 Y0. I0. J-0.5',
+                'N8 X0. Y-0.5 I-0.5 J0.',
+                'N9 X-0.5 Y0. I0. J0.5',
+                'N10 G01 Z0.1 F5.',
+                'N11 G00 X0. Y0. Z0.25'
+            ].join('\n');
+
+            let group = this.renderGCode(GCODE);
             this.three.scene.add(group);
 
             // Render scene
@@ -393,7 +407,7 @@ export default {
 			// Try to get the Z value below the cursor
 			// For that we need normalized X+Y coordinates between -1.0 and 1.0
 			const rect = e.target.getBoundingClientRect();
-			const mouse = new Vector2();
+			const mouse = new THREE.Vector2();
 			mouse.x = (e.clientX - rect.left) / e.target.clientWidth * 2 - 1;
 			mouse.y = -(e.clientY - rect.top) / e.target.clientHeight * 2 + 1;
 
