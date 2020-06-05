@@ -119,7 +119,7 @@ window.addEventListener('resize', function() {
 
 export default {
 	beforeCreate() {
-        console.log("beforeCreate");
+        //console.log("beforeCreate");
 		this.three = {						// non-reactive data
 			scene: null,
 			camera: null,
@@ -157,7 +157,7 @@ export default {
 			isActive: true,
 			ready: false,
 			loading: false,
-			errorMessage: "InitialData",
+			errorMessage: "",
 
 			colorScheme: 'terrain',
 			tooltip: {
@@ -177,7 +177,7 @@ export default {
 		...mapActions('machine', ['download']),
 		init() {
 			// Perform initial resize
-            console.log("INIT");
+            //console.log("INIT");
 			const size = this.resize();
 
 			// Create THREE instances
@@ -191,15 +191,16 @@ export default {
 			this.three.orbitControls.enableKeys = false;
 			this.three.raycaster = new Raycaster();
     
+            this.three.scene.background = new Color("rgb(200, 200, 200)");
 			// Register this instance in order to deal with size changes
 			threeInstances.push(this);
 //			if (this.isConnected) {
 				this.preview();
 //			}
-            console.log("inited");
+            //console.log("inited");
 		},
 		resize() {
-            console.log("resize");
+            //console.log("resize");
 			if (!this.isActive) {
 				return;
 			}
@@ -227,7 +228,7 @@ export default {
 			return { width, height };
 		},
         renderGCode(gcode) {
-            console.log("renderGCode");
+            //console.log("renderGCode");
             const toolpath = new Toolpath({
                 // @param {object} modal The modal object.
                 // @param {object} v1 A 3D vector of the start point.
@@ -284,7 +285,7 @@ export default {
                 }
             });
 
-            console.log("ToolPathOK");
+            //console.log("ToolPathOK");
 
             while (this.group.children.length > 0) {
                 const child = this.group.children[0];
@@ -292,14 +293,14 @@ export default {
                 child.geometry.dispose();
             }
 
-            console.log("LoadToolPath");
+            //console.log("LoadToolPath");
             toolpath.loadFromStringSync(gcode, (line, index) => {
                 this.frames.push({
                     data: line,
                     vertexIndex: this.geometry.vertices.length // remember current vertex index
                 });
             });
-            console.log("LoadToolPathOK");
+            //console.log("LoadToolPathOK");
 
             const workpiece = new Line(
                 new Geometry(),
@@ -316,75 +317,75 @@ export default {
 
             this.group.add(workpiece);
 
-            console.log({
-                workpiece: workpiece,
-                frames: this.frames,
-                frameIndex: this.frameIndex
-            });
+            //console.log({
+            //     workpiece: workpiece,
+            //     frames: this.frames,
+            //     frameIndex: this.frameIndex
+            // });
 
-            console.log("renderGCodeDONE");
+            //console.log("renderGCodeDONE");
 
             return this.group;
         },
         myRender() {
-            console.log("myRender");
-            console.log("myRender0");
+            //console.log("myRender");
+            //console.log("myRender0");
             // Generate stats
             let xMin = -5.0;
             let xMax = 5.0;
             let yMin = -5.0;
             let yMax = 5.0;
 
-            console.log("myRender01");
+            //console.log("myRender01");
             this.numPoints = 0;
             this.minDiff = 10;
             this.maxDiff = 10;
             this.meanError = 0;
             this.rmsError = 0;
 
-            console.log("myRender02");
+            //console.log("myRender02");
             // Make indicators and add them
-            console.log("myRender03");
+            //console.log("myRender03");
 
             if (!this.three.hasHelpers) {
-                console.log("Helpers");
+                //console.log("Helpers");
                 // Make axis arrows for XYZ
-                this.three.scene.add(new ArrowHelper(new Vector3(1, 0, 0), new Vector3(-0.6, -0.6, 0), 0.5, 0xFF0000));
-                this.three.scene.add(new ArrowHelper(new Vector3(0, 1, 0), new Vector3(-0.6, -0.6, 0), 0.5, 0x00FF00));
-                this.three.scene.add(new ArrowHelper(new Vector3(0, 0, 1), new Vector3(-0.6, -0.6, 0), 0.5, 0x0000FF));
+                this.three.scene.add(new ArrowHelper(new Vector3(1, 0, 0), new Vector3(0, 0, 0), 0.5, 0xFF0000));
+                this.three.scene.add(new ArrowHelper(new Vector3(0, 1, 0), new Vector3(0, 0, 0), 0.5, 0x00FF00));
+                this.three.scene.add(new ArrowHelper(new Vector3(0, 0, 1), new Vector3(0, 0, 0), 0.5, 0x0000FF));
 
-                console.log("Grid");
+                //console.log("Grid");
                 // Make grid on XY plane
-                const grid = new GridHelper(1.1, 15);
+                const grid = new GridHelper(100, 50);
                 grid.rotation.x = -Math.PI / 2;
                 this.three.scene.add(grid);
-                console.log("GridDONE");
-                console.log(grid);
+                //console.log("GridDONE");
+                //console.log(grid);
 
                 // Don't add these helpers again
                 this.three.hasHelpers = true;
-                console.log("HelpersDone");
+                //console.log("HelpersDone");
             }
 
-            console.log("myRender04");
-            let group = this.renderGCode("G1 X0 Y0 Z0\nG1 X10 Y10 Z10\n");
+            //console.log("myRender04");
+            let group = this.renderGCode("G1 X0 Y0 Z0\nG1 X1 Y0 Z0\nG1 X0 Y1 Z0\nG1 X1 Y1 Z1\n");
             this.three.scene.add(group);
 
             // Render scene
             // this.ready = true;
             // this.resize();
             this.render();
-            console.log("myRenderDONE");
+            //console.log("myRenderDONE");
         },
 		render() {
 			if (this.three.renderer) {
-                // console.log("render");
+                // //console.log("render");
 				requestAnimationFrame(this.render);
 				this.three.renderer.render(this.three.scene, this.three.camera);
 			}
 		},
 		canvasMouseMove(e) {
-            // console.log("canvasMouseMove");
+            // //console.log("canvasMouseMove");
 			if (!e.clientX || !this.three.meshGeometry) {
 				return;
 			}
@@ -426,35 +427,35 @@ export default {
 			}
 		},
 		topView() {
-            console.log("topView");
+            //console.log("topView");
 			this.three.camera.position.set(0, 0, 1.5);
 			this.three.camera.rotation.set(0, 0, 0);
 			this.three.camera.updateProjectionMatrix();
 		},
 
 		preview() {
-            console.log("preview");
+            //console.log("preview");
 			this.ready = true;
 			this.loading = false;
             this.myRender();
         }
 	},
 	activated() {
-        console.log("activated");
+        //console.log("activated");
 		this.isActive = true;
 		this.resize();
 	},
 	deactivate() {
-        console.log("deactivated");
+        //console.log("deactivated");
 		this.isActive = false;
 	},
 	mounted() {
-        console.log("mounted");
+        //console.log("mounted");
         this.init();
 		this.preview();
 	},
 	beforeDestroy() {
-        console.log("beforeDestroy");
+        //console.log("beforeDestroy");
 		this.unsubscribe();
 
 		threeInstances = threeInstances.filter(item => item !== this);
@@ -472,7 +473,7 @@ export default {
 		},
 		isConnected(to) {
 			if (to) {
-                console.log("isConnected");
+                //console.log("isConnected");
 				this.preview();
 			}
 		},
